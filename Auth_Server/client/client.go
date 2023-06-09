@@ -6,6 +6,7 @@ import (
 	"flag"
 	"log"
 	"math"
+	"math/rand"
 	"time"
 
 	"google.golang.org/grpc"
@@ -15,6 +16,20 @@ import (
 var (
 	addr = flag.String("addr", "localhost:5052", "The address to connect to")
 )
+
+func random_str() string {
+	rand.Seed(time.Now().Unix())
+	length := 20
+
+	ran_str := make([]byte, length)
+
+	// Generating Random string
+	for i := 0; i < length; i++ {
+		ran_str[i] = byte((65 + rand.Intn(25)))
+	}
+
+	return string(ran_str)
+}
 
 func main() {
 	flag.Parse()
@@ -29,8 +44,8 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	var nonce string
-	var message_id uint32
+	var nonce string = random_str()
+	var message_id uint32 = 2
 	response, err := c.GetPQResponse(ctx, &pb.PQ_Request{Nonce: nonce, MessageId: message_id})
 	if err != nil {
 		log.Fatalf("Could not get PQ Response: %v", err)
