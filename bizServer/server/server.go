@@ -6,36 +6,87 @@ import (
 	"context"
 	"log"
 	"net"
+	"time"
 
 	"google.golang.org/grpc"
 	"database/sql"
+	_ "github.com/lib/pq"
+	_ "github.com/redis/go-redis/v9"
 )
 
 type userServiceServer struct {
-	// Implement the necessary fields for your server
-	pb.UnimplementedUserServiceServer // Embed the UnimplementedUserServiceServer type
+	pb.UnimplementedUserServiceServer 
 	db *sql.DB
 }
 
-// Implement the first service: get_users
+// first service: get_users
 func (s *userServiceServer) GetUsers(ctx context.Context, req *pb.GetUsersRequest) (*pb.GetUsersResponse, error) {
-	/////////////////////////////////////// getter
-	if req.AuthKey != "valid_key" {
+
+	//////////  Redise ///////////
+	// client := redis.NewClient(&redis.Options{
+    //     Addr:	  "localhost:6379",
+    //     Password: "", // no password set
+    //     DB:		  0,  // use default DB
+    // })
+	// redis_ctx := context.Background()
+
+	// _, errRedise := client.Get(redis_ctx, req.GetAuthKey()).Result()
+	// if errRedise != nil {
+	// 	return nil, errors.New("invalid auth_key")
+	// }
+
+
+	if req.GetAuthKey() != "valid_key" {
 		return nil, errors.New("invalid auth_key")
 	}
 
-	if req.MessageId%2 != 0 || req.MessageId <= 0 {
+	if req.GetMessageId()%2 != 0 || req.GetMessageId() <= 0 {
 		return nil, errors.New("invalid message_id")
 	}
+	
+	var rows *sql.Rows
+	var err error
 
-	// TODO: Implement the database query to fetch users based on the provided input parameters
-	// Use s.db to execute the query
+	// Check if user_id is empty
+	if req.GetUserId() == 0 {
+		// Retrieve the first 10 rows from the table
+		rows, err = s.db.Query("SELECT * FROM users LIMIT 10")
+	} else {
+		// Retrieve the row with the specified user_id
+		rows, err = s.db.Query("SELECT * FROM users WHERE id = $1", req.GetUserId())
+	}
+	
+	
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
 
-	// Example response
-	users := []*pb.User{
-		{Id: 1, Name: "User 1"},
-		{Id: 2, Name: "User 2"},
-		// Add more users as needed
+	var users []*pb.User
+
+	for rows.Next() {
+		var name, family string
+    	var id, age int32
+    	var sex string
+    	var createdAt time.Time
+		err := rows.Scan(&name, &family, &id, &age, &sex, &createdAt)
+		if err != nil {
+			log.Fatal(err)
+		}
+		user := &pb.User{
+			Name:      name,
+			Family:    family,
+			Id:        id,
+			Age:       age,
+			Sex:       sex,
+			CreatedAt: createdAt.String(),
+		}
+
+		users = append(users, user)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Fatal(err)
 	}
 
 	return &pb.GetUsersResponse{
@@ -44,26 +95,62 @@ func (s *userServiceServer) GetUsers(ctx context.Context, req *pb.GetUsersReques
 	}, nil
 }
 
-// Implement the second service: get_users_with_sql_inject
+// second service: get_users_with_sql_inject
 func (s *userServiceServer) GetUsersWithSQLInject(ctx context.Context, req *pb.GetUsersWithSQLInjectRequest) (*pb.GetUsersWithSQLInjectResponse, error) {
-	if req.AuthKey != "valid_key" {
+	if req.GetAuthKey() != "valid_key" {
 		return nil, errors.New("invalid auth_key")
 	}
 
-	if req.MessageId%2 != 0 || req.MessageId <= 0 {
+	if req.GetMessageId()%2 != 0 || req.GetMessageId() <= 0 {
 		return nil, errors.New("invalid message_id")
 	}
+	
+	var rows *sql.Rows
+	var err error
 
-	// TODO: Implement the database query to fetch users based on the provided input parameters
-	// IMPORTANT: Ensure you properly sanitize the input to prevent SQL injection vulnerabilities
-	// Use s.db to execute the query
-
-	// Example response
-	users := []*pb.User{
-		{Id: 1, Name: "User 1"},
-		{Id: 2, Name: "User 2"},
-		// Add more users as needed
+	// Check if user_id is empty
+	if req.GetUserId() == "" {
+		// Retrieve the first 10 rows from the table
+		rows, err = s.db.Query("SELECT * FROM users LIMIT 10")
+	} else {
+		// Retrieve the row with the specified user_id
+		query := "SELECT * FROM users WHERE id = " + req.GetUserId()
+		rows, err = s.db.Query(query)
 	}
+	
+	
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+
+	var users []*pb.User
+
+	for rows.Next() {
+		var name, family string
+    	var id, age int32
+    	var sex string
+    	var createdAt time.Time
+		err := rows.Scan(&name, &family, &id, &age, &sex, &createdAt)
+		if err != nil {
+			log.Fatal(err)
+		}
+		user := &pb.User{
+			Name:      name,
+			Family:    family,
+			Id:        id,
+			Age:       age,
+			Sex:       sex,
+			CreatedAt: createdAt.String(),
+		}
+
+		users = append(users, user)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Fatal(err)
+	}
+
 
 	return &pb.GetUsersWithSQLInjectResponse{
 		Users:     users,
@@ -72,71 +159,24 @@ func (s *userServiceServer) GetUsersWithSQLInject(ctx context.Context, req *pb.G
 }
 
 func main() {
-	// TODO: Initialize your Postgres database connection
-	// Replace the connection string with your actual Postgres connection details
-	
-	// db, err := sql.Open("postgres", "host=127.0.0.1 port=5062 user=your_user password=your_password dbname=your_db sslmode=disable")
-	// if err != nil {
-	// 	log.Fatalf("Failed to connect to the database: %v", err)
-	// }
-	// defer db.Close()
+	db, err := sql.Open("postgres", "postgres://postgres:postgres123@localhost:5432/bizserversql")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
 
-	// TODO: Ensure the necessary tables are created in the database
-
-	// Create a new gRPC server
 	server := grpc.NewServer()
+	userService := &userServiceServer{db: db}
+	pb.RegisterUserServiceServer(server, userService) 
 
-	// Register the UserService server
-	// userService := &userServiceServer{db: db}
-	userService := &userServiceServer{}
-	pb.RegisterUserServiceServer(server, userService) // Register the UserService implementation
-
-	// Start listening on a TCP port
 	listener, err := net.Listen("tcp", ":5062")
 	if err != nil {
 		log.Fatalf("Failed to listen: %v", err)
 	}
 
-	// Start the gRPC server
+	// gRPC server
 	log.Println("Server started, listening on port 5062")
 	if err := server.Serve(listener); err != nil {
 		log.Fatalf("Failed to serve: %v", err)
 	}
 }
-
-
-
-
-// var (
-// 	port = flag.Int("port", 5062, "The server port")
-// )
-
-// func (s *server) GetUser(ctx context.Context, request *pb.Get) (*pb.UserResponse, error) {
-// 	// Handle the GetUser request and return a response or an error
-// 	// Your implementation goes here
-// }
-
-// func main() {
-// 	flag.Parse()
-// 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
-// 	if err != nil {
-// 		log.Fatalf("failed to listen: %v", err)
-// 	}
-// 	s := grpc.NewServer()
-// 	pb.RegisterGetUsersServer(s, &server{})
-// 	log.Printf("server listening at %v", lis.Addr())
-// 	if err := s.Serve(lis); err != nil {
-// 		log.Fatalf("failed to serve: %v", err)
-// 	}
-
-// 	/*flag.Parse()
-// 	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", *port))
-// 	if err != nil {
-// 		log.Fatalf("failed to listen: %v", err)
-// 	}
-// 	var opts []grpc.ServerOption
-
-// 	grpcServer := grpc.NewServer(opts...)
-// 	pb.RegisterGetUsersServer(grpcServer, newServer())
-// 	grpcServer.Serve(lis)*/
-// }
