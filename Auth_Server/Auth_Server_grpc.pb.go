@@ -18,172 +18,122 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// Req_PQClient is the client API for Req_PQ service.
+// Req_DHClient is the client API for Req_DH service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type Req_PQClient interface {
+type Req_DHClient interface {
 	GetPQResponse(ctx context.Context, in *PQ_Request, opts ...grpc.CallOption) (*PQ_Response, error)
+	GetDHResponse(ctx context.Context, in *DH_Request, opts ...grpc.CallOption) (*DH_Response, error)
 }
 
-type req_PQClient struct {
+type req_DHClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewReq_PQClient(cc grpc.ClientConnInterface) Req_PQClient {
-	return &req_PQClient{cc}
+func NewReq_DHClient(cc grpc.ClientConnInterface) Req_DHClient {
+	return &req_DHClient{cc}
 }
 
-func (c *req_PQClient) GetPQResponse(ctx context.Context, in *PQ_Request, opts ...grpc.CallOption) (*PQ_Response, error) {
+func (c *req_DHClient) GetPQResponse(ctx context.Context, in *PQ_Request, opts ...grpc.CallOption) (*PQ_Response, error) {
 	out := new(PQ_Response)
-	err := c.cc.Invoke(ctx, "/Req_PQ/GetPQResponse", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/Req_DH/GetPQResponse", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// Req_PQServer is the server API for Req_PQ service.
-// All implementations must embed UnimplementedReq_PQServer
+func (c *req_DHClient) GetDHResponse(ctx context.Context, in *DH_Request, opts ...grpc.CallOption) (*DH_Response, error) {
+	out := new(DH_Response)
+	err := c.cc.Invoke(ctx, "/Req_DH/GetDHResponse", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// Req_DHServer is the server API for Req_DH service.
+// All implementations must embed UnimplementedReq_DHServer
 // for forward compatibility
-type Req_PQServer interface {
+type Req_DHServer interface {
 	GetPQResponse(context.Context, *PQ_Request) (*PQ_Response, error)
-	mustEmbedUnimplementedReq_PQServer()
+	GetDHResponse(context.Context, *DH_Request) (*DH_Response, error)
+	mustEmbedUnimplementedReq_DHServer()
 }
 
-// UnimplementedReq_PQServer must be embedded to have forward compatible implementations.
-type UnimplementedReq_PQServer struct {
+// UnimplementedReq_DHServer must be embedded to have forward compatible implementations.
+type UnimplementedReq_DHServer struct {
 }
 
-func (UnimplementedReq_PQServer) GetPQResponse(context.Context, *PQ_Request) (*PQ_Response, error) {
+func (UnimplementedReq_DHServer) GetPQResponse(context.Context, *PQ_Request) (*PQ_Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPQResponse not implemented")
 }
-func (UnimplementedReq_PQServer) mustEmbedUnimplementedReq_PQServer() {}
+func (UnimplementedReq_DHServer) GetDHResponse(context.Context, *DH_Request) (*DH_Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetDHResponse not implemented")
+}
+func (UnimplementedReq_DHServer) mustEmbedUnimplementedReq_DHServer() {}
 
-// UnsafeReq_PQServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to Req_PQServer will
+// UnsafeReq_DHServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to Req_DHServer will
 // result in compilation errors.
-type UnsafeReq_PQServer interface {
-	mustEmbedUnimplementedReq_PQServer()
+type UnsafeReq_DHServer interface {
+	mustEmbedUnimplementedReq_DHServer()
 }
 
-func RegisterReq_PQServer(s grpc.ServiceRegistrar, srv Req_PQServer) {
-	s.RegisterService(&Req_PQ_ServiceDesc, srv)
+func RegisterReq_DHServer(s grpc.ServiceRegistrar, srv Req_DHServer) {
+	s.RegisterService(&Req_DH_ServiceDesc, srv)
 }
 
-func _Req_PQ_GetPQResponse_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Req_DH_GetPQResponse_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PQ_Request)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(Req_PQServer).GetPQResponse(ctx, in)
+		return srv.(Req_DHServer).GetPQResponse(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Req_PQ/GetPQResponse",
+		FullMethod: "/Req_DH/GetPQResponse",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(Req_PQServer).GetPQResponse(ctx, req.(*PQ_Request))
+		return srv.(Req_DHServer).GetPQResponse(ctx, req.(*PQ_Request))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// Req_PQ_ServiceDesc is the grpc.ServiceDesc for Req_PQ service.
-// It's only intended for direct use with grpc.RegisterService,
-// and not to be introspected or modified (even as a copy)
-var Req_PQ_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "Req_PQ",
-	HandlerType: (*Req_PQServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "GetPQResponse",
-			Handler:    _Req_PQ_GetPQResponse_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "Auth_Server.proto",
-}
-
-// Req_DH_ParamsClient is the client API for Req_DH_Params service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type Req_DH_ParamsClient interface {
-	GetDHResponse(ctx context.Context, in *DH_Request, opts ...grpc.CallOption) (*DH_Response, error)
-}
-
-type req_DH_ParamsClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewReq_DH_ParamsClient(cc grpc.ClientConnInterface) Req_DH_ParamsClient {
-	return &req_DH_ParamsClient{cc}
-}
-
-func (c *req_DH_ParamsClient) GetDHResponse(ctx context.Context, in *DH_Request, opts ...grpc.CallOption) (*DH_Response, error) {
-	out := new(DH_Response)
-	err := c.cc.Invoke(ctx, "/Req_DH_Params/GetDHResponse", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// Req_DH_ParamsServer is the server API for Req_DH_Params service.
-// All implementations must embed UnimplementedReq_DH_ParamsServer
-// for forward compatibility
-type Req_DH_ParamsServer interface {
-	GetDHResponse(context.Context, *DH_Request) (*DH_Response, error)
-	mustEmbedUnimplementedReq_DH_ParamsServer()
-}
-
-// UnimplementedReq_DH_ParamsServer must be embedded to have forward compatible implementations.
-type UnimplementedReq_DH_ParamsServer struct {
-}
-
-func (UnimplementedReq_DH_ParamsServer) GetDHResponse(context.Context, *DH_Request) (*DH_Response, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetDHResponse not implemented")
-}
-func (UnimplementedReq_DH_ParamsServer) mustEmbedUnimplementedReq_DH_ParamsServer() {}
-
-// UnsafeReq_DH_ParamsServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to Req_DH_ParamsServer will
-// result in compilation errors.
-type UnsafeReq_DH_ParamsServer interface {
-	mustEmbedUnimplementedReq_DH_ParamsServer()
-}
-
-func RegisterReq_DH_ParamsServer(s grpc.ServiceRegistrar, srv Req_DH_ParamsServer) {
-	s.RegisterService(&Req_DH_Params_ServiceDesc, srv)
-}
-
-func _Req_DH_Params_GetDHResponse_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Req_DH_GetDHResponse_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DH_Request)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(Req_DH_ParamsServer).GetDHResponse(ctx, in)
+		return srv.(Req_DHServer).GetDHResponse(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Req_DH_Params/GetDHResponse",
+		FullMethod: "/Req_DH/GetDHResponse",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(Req_DH_ParamsServer).GetDHResponse(ctx, req.(*DH_Request))
+		return srv.(Req_DHServer).GetDHResponse(ctx, req.(*DH_Request))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// Req_DH_Params_ServiceDesc is the grpc.ServiceDesc for Req_DH_Params service.
+// Req_DH_ServiceDesc is the grpc.ServiceDesc for Req_DH service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var Req_DH_Params_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "Req_DH_Params",
-	HandlerType: (*Req_DH_ParamsServer)(nil),
+var Req_DH_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "Req_DH",
+	HandlerType: (*Req_DHServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "GetPQResponse",
+			Handler:    _Req_DH_GetPQResponse_Handler,
+		},
+		{
 			MethodName: "GetDHResponse",
-			Handler:    _Req_DH_Params_GetDHResponse_Handler,
+			Handler:    _Req_DH_GetDHResponse_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
