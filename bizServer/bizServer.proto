@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+option go_package = "github.com/Web-1402-Assignments/HW1/bizServer";
+
+service UserService {
+  rpc GetUsers(GetUsersRequest) returns (GetUsersResponse) {}
+  rpc GetUsersWithSQLInject(GetUsersWithSQLInjectRequest) returns (GetUsersWithSQLInjectResponse) {}
+}
+
+message User {
+  string name = 1;
+  string family = 2;
+  int32 id = 3;
+  int32 age = 4;
+  string sex = 5;
+  string createdAt = 6;
+}
+
+message GetUsersRequest {
+  int32 user_id = 1;
+  string auth_key = 2;
+  int32 message_id = 3;
+}
+
+message GetUsersResponse {
+  repeated User users = 1;
+  int32 message_id = 2;
+}
+
+message GetUsersWithSQLInjectRequest {
+  string user_id = 1;
+  string auth_key = 2;
+  int32 message_id = 3;
+}
+
+message GetUsersWithSQLInjectResponse {
+  repeated User users = 1;
+  int32 message_id = 2;
+}
+
+
+
+message ResponseInjection {
+  string message = 1;
+}
