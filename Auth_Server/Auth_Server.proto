@@ -3,8 +3,9 @@ syntax = "proto3";
 option go_package = "github.com/Web-1402-Assignments/HW1/Auth_Server";
 
 
-service Req_PQ{
+service Req_DH{
     rpc GetPQResponse(PQ_Request) returns(PQ_Response){}
+    rpc GetDHResponse(DH_Request) returns(DH_Response){}
 }
 
 message PQ_Request{
@@ -20,10 +21,6 @@ message PQ_Response{
     int32 g = 5;
 }
 
-
-service Req_DH_Params{
-    rpc GetDHResponse(DH_Request) returns(DH_Response){}
-}
 
 message DH_Request{
     string nonce = 1;
