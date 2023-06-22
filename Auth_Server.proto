@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "github.com/Web-1402-Assignments/HW1/Auth_Server";
+option go_package = "github.com/Web-1402-Assignments/HW1";
 
 
 service Req_DH{

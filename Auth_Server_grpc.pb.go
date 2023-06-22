@@ -4,7 +4,7 @@
 // - protoc             v3.12.4
 // source: Auth_Server.proto
 
-package Auth_Server
+package HW1
 
 import (
 	context "context"
