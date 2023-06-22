@@ -4,7 +4,7 @@
 // - protoc             v3.12.4
 // source: bizServer.proto
 
-package bizServer
+package HW1
 
 import (
 	context "context"

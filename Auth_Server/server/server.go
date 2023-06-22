@@ -1,10 +1,11 @@
 package main
 
 import (
-	pb "Auth_Server"
+	pb "HW1"
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -27,7 +28,7 @@ var (
 )
 
 func random_str() (string){
-	rand.Seed(time.Now().Unix())
+	rand.Seed(time.Now().Unix() * 2)
     length := 20
   
     ran_str := make([]byte, length)
@@ -50,13 +51,30 @@ func (s *server) GetPQResponse(ctx context.Context, in *pb.PQ_Request) (*pb.PQ_R
 	}
 
 	if in.GetMessageId() <= 0 || in.GetMessageId()%2 != 0 {
-		return nil, fmt.Errorf("given message_id doesn't have the correct form")
+		return nil, errors.New("given message_id doesn't have the correct form")
 	}
 
 	log.Printf("Received: %v", in.GetNonce())
 	nonce = in.GetNonce()
 	server_nonce = random_str()
 	first_message_id = in.GetMessageId()
+
+	//SHA1 hash
+	h := sha1.New()
+	h.Write([]byte(nonce + server_nonce))
+	sha1_hash := hex.EncodeToString(h.Sum(nil))
+
+	//redis
+	client := redis.NewClient(&redis.Options{
+        Addr:	  "localhost:6379",
+        Password: "", // no password set
+        DB:		  0,  // use default DB
+    })
+	redis_ctx := context.Background()
+	err := client.Set(redis_ctx, fmt.Sprintf("%v", sha1_hash), first_message_id, 20*time.Minute).Err()
+	if (err != nil){
+		return nil, err
+	}
 
 	return &pb.PQ_Response{Nonce: nonce, ServerNonce: server_nonce, MessageId: in.MessageId + 1, P: p, G: g}, nil
 }
@@ -79,17 +97,17 @@ func (s *server) GetDHResponse(ctx context.Context, in *pb.DH_Request) (*pb.DH_R
 	}
 
 	if in.GetMessageId() <= 0 || in.GetMessageId()%2 != 0 {
-		return nil, fmt.Errorf("given message_id doesn't have the correct form")
+		return nil, errors.New("given message_id doesn't have the correct form")
 	}
 
 	if in.GetMessageId() <= first_message_id {
-		return nil, fmt.Errorf("given message_id is not valid")
+		return nil, errors.New("given message_id is not valid")
 	}
 
 	log.Printf("Received: %v", in.GetNonce())
 	b := 15
 	B := math.Mod(math.Pow(float64(g), float64(b)), float64(p))
-	public_key := math.Mod(float64(p), math.Pow(float64(in.GetA()), float64(b)))
+	public_key := math.Mod(math.Pow(float64(in.GetA()), float64(b)), float64(p))
 
 	//SHA1 hash
 	h := sha1.New()
@@ -103,9 +121,10 @@ func (s *server) GetDHResponse(ctx context.Context, in *pb.DH_Request) (*pb.DH_R
         DB:		  0,  // use default DB
     })
 	redis_ctx := context.Background()
-	err := client.Set(redis_ctx, fmt.Sprintf("%v", public_key), sha1_hash, 0)
+	client.Del(redis_ctx, sha1_hash).Err()
+	err := client.Set(redis_ctx, fmt.Sprintf("%v", public_key), sha1_hash, 20*time.Minute).Err()
 	if (err != nil){
-		return nil, fmt.Errorf(err.Result())
+		return nil, err
 	}
 
 	return &pb.DH_Response{Nonce: in.GetNonce(), ServerNonce: in.GetServerNonce(), MessageId: in.GetMessageId() + 1, B: int32(B)}, nil

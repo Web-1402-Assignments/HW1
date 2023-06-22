@@ -1,7 +1,7 @@
-package main
+package Auth_Server
 
 import (
-	pb "Auth_Server"
+	pb "HW1"
 	"context"
 	"flag"
 	"log"
