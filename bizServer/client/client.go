@@ -19,7 +19,7 @@ func main() {
 
 	// Create a request to get users
 	getUsersReq := &pb.GetUsersRequest{
-		UserId:    1111,
+		UserId:    1125,
 		AuthKey:   "valid_key",
 		MessageId: 2,
 	}
