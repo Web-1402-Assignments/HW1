@@ -159,7 +159,8 @@ func (s *userServiceServer) GetUsersWithSQLInject(ctx context.Context, req *pb.G
 }
 
 func main() {
-	db, err := sql.Open("postgres", "postgres://postgres:postgres123@localhost:5432/bizserversql")
+	db, err := sql.Open("postgres", "host=172.17.0.2 port=5432 user=postgres password=postgres123 dbname=bizdatabase sslmode=disable")
+	
 	if err != nil {
 		log.Fatal(err)
 	}
