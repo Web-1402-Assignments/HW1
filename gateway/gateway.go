@@ -39,6 +39,16 @@ type req_dh_params struct {
 	ID uint32
 	KEY int32
 }
+type get_users_biz struct {
+	USER_ID int32
+	AUTH_KEY string
+	MESSAGE_ID int32
+}
+type get_users_injection_biz struct {
+	USER_ID string
+	AUTH_KEY string
+	MESSAGE_ID int32
+}
 func NewBlocklist() *Blocklist {
 	return &Blocklist{
 		ips: make(map[string]struct{}),
@@ -111,9 +121,16 @@ func main() {
 	}
 	defer conn.Close()
 	c := pb.NewReq_DHClient(conn)
+	///////////////////////////////////////
+	conn_biz, err_conn_biz := grpc.Dial("localhost:5062", grpc.WithInsecure())
+	if err_conn_biz != nil {
+		log.Fatalf("Failed to connect to bizServer! : %v", err_conn_biz)
+	}
+	defer conn_biz.Close()
+	biz_client := pb.NewUserServiceClient(conn_biz)
 
+	////////////////////
 	gateway_ctx := context.Background()
-
 	// Create the blocklist and rate limiter
 	blocklist := NewBlocklist()
 	rateLimiter := RateLimiter(rate.Limit(100), 10, blocklist)
@@ -176,6 +193,7 @@ func main() {
 				"err": err.Error(),
 			})
 		}else {
+	
 			key := math.Mod(math.Pow(float64(response.GetB()), float64(dh_params.KEY)), float64(P))
 			ctx.JSON(200, gin.H{
 				"B is :" : response.GetB(),
@@ -184,10 +202,56 @@ func main() {
 		}
 	})
 	//////////////////////////////////////////////////////////////////////////////////////////
+	router.POST("/biz/getUsers/", func(ctx *gin.Context) {
+		var data get_users_biz
+		if ctx.BindJSON(&data) != nil{
+			ctx.JSON(200, gin.H{
+				"err": "wrong json format",
+			})
+		}
+		response, err := biz_client.GetUsers(gateway_ctx, &pb.GetUsersRequest{UserId: data.USER_ID, AuthKey: data.AUTH_KEY, MessageId: data.MESSAGE_ID})
+		if err != nil {
+			fmt.Println(err)
+			ctx.JSON(200, gin.H{
+				"err": err.Error(),
+			})
+		}else{
+			var s string
+			for _, user := range response.Users {
+				s += fmt.Sprint(user.Id) + "  " + user.Name + "  " + user.Family + "  " + fmt.Sprint(user.Age) + "  " + user.Sex + "  " + user.CreatedAt + "\u000a"
+			}
+			ctx.JSON(200, gin.H{
+				"data is : ": s,
+				"message_id is :": response.MessageId,
+			})
+		}
+	})
+	router.POST("/biz/WithInjection/", func(ctx *gin.Context) {
+		var data get_users_injection_biz
+		if ctx.BindJSON(&data) != nil {
+			ctx.JSON(200, gin.H{
+				"err" : "wrong json format!",
+			})
+		}
+		response, err := biz_client.GetUsersWithSQLInject(gateway_ctx, &pb.GetUsersWithSQLInjectRequest{
+			UserId: data.USER_ID, AuthKey: data.AUTH_KEY, MessageId: data.MESSAGE_ID,
+		})
+		if err != nil {
+			ctx.JSON(200, gin.H{
+				"err": err.Error(),
+			})
+		}else {
+			var s string
+			for _, user := range response.Users {
+				s += fmt.Sprint(user.Id) + "  " + user.Name + "  " + user.Family + "  " + fmt.Sprint(user.Age) + "  " + user.Sex + "  " + user.CreatedAt + "\u000a"
+			}
+			ctx.JSON(200, gin.H{
+				"data is : ": s,
+				"message_id is :": response.MessageId,
+			})
+		}
 
-
-
-
+	})
 	////////////////////////////////////////////////////////////////////////////////
 
 	err2 := router.Run(":6433")

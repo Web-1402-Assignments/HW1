@@ -25,6 +25,13 @@ var (
 	nonce            string
 	server_nonce     string
 	first_message_id uint32
+	//redis
+	client = redis.NewClient(&redis.Options{
+        Addr:	  "localhost:6379",
+        Password: "", // no password set
+        DB:		  0,  // use default DB
+    })
+	redis_ctx = context.Background()
 )
 
 func random_str() (string){
@@ -114,13 +121,7 @@ func (s *server) GetDHResponse(ctx context.Context, in *pb.DH_Request) (*pb.DH_R
 	h.Write([]byte(nonce + server_nonce))
 	sha1_hash := hex.EncodeToString(h.Sum(nil))
 
-	//redis
-	client := redis.NewClient(&redis.Options{
-        Addr:	  "localhost:6379",
-        Password: "", // no password set
-        DB:		  0,  // use default DB
-    })
-	redis_ctx := context.Background()
+	
 	client.Del(redis_ctx, sha1_hash).Err()
 	err := client.Set(redis_ctx, fmt.Sprintf("%v", public_key), sha1_hash, 20*time.Minute).Err()
 	if (err != nil){
