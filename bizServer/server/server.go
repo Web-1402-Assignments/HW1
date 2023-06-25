@@ -2,43 +2,41 @@ package main
 
 import (
 	pb "HW1"
-	"errors"
 	"context"
+	"errors"
+	_"fmt"
 	"log"
 	"net"
 	"time"
 
-	"google.golang.org/grpc"
 	"database/sql"
+
 	_ "github.com/lib/pq"
-	_ "github.com/redis/go-redis/v9"
+	 "github.com/redis/go-redis/v9"
+	"google.golang.org/grpc"
 )
 
 type userServiceServer struct {
 	pb.UnimplementedUserServiceServer 
 	db *sql.DB
 }
-
+var (
+	client = redis.NewClient(&redis.Options{
+		Addr:	  "localhost:6379",
+        Password: "", // no password set
+        DB:		  0,  // use default DB
+	})
+	redis_ctx = context.Background()
+)
 // first service: get_users
 func (s *userServiceServer) GetUsers(ctx context.Context, req *pb.GetUsersRequest) (*pb.GetUsersResponse, error) {
 
-	//////////  Redise ///////////
-	// client := redis.NewClient(&redis.Options{
-    //     Addr:	  "localhost:6379",
-    //     Password: "", // no password set
-    //     DB:		  0,  // use default DB
-    // })
-	// redis_ctx := context.Background()
 
-	// _, errRedise := client.Get(redis_ctx, req.GetAuthKey()).Result()
-	// if errRedise != nil {
-	// 	return nil, errors.New("invalid auth_key")
-	// }
-
-
-	if req.GetAuthKey() != "valid_key" {
+	errRedise := client.Get(redis_ctx, req.GetAuthKey()).Err()
+	if errRedise != nil {
 		return nil, errors.New("invalid auth_key")
 	}
+
 
 	if req.GetMessageId()%2 != 0 || req.GetMessageId() <= 0 {
 		return nil, errors.New("invalid message_id")
@@ -88,7 +86,6 @@ func (s *userServiceServer) GetUsers(ctx context.Context, req *pb.GetUsersReques
 	if err := rows.Err(); err != nil {
 		log.Fatal(err)
 	}
-
 	return &pb.GetUsersResponse{
 		Users:     users,
 		MessageId: req.MessageId + 1,
@@ -97,7 +94,8 @@ func (s *userServiceServer) GetUsers(ctx context.Context, req *pb.GetUsersReques
 
 // second service: get_users_with_sql_inject
 func (s *userServiceServer) GetUsersWithSQLInject(ctx context.Context, req *pb.GetUsersWithSQLInjectRequest) (*pb.GetUsersWithSQLInjectResponse, error) {
-	if req.GetAuthKey() != "valid_key" {
+	errRedise := client.Get(redis_ctx, req.GetAuthKey()).Err()
+	if errRedise != nil {
 		return nil, errors.New("invalid auth_key")
 	}
 
@@ -159,7 +157,7 @@ func (s *userServiceServer) GetUsersWithSQLInject(ctx context.Context, req *pb.G
 }
 
 func main() {
-	db, err := sql.Open("postgres", "host=172.17.0.2 port=5432 user=postgres password=postgres123 dbname=bizdatabase sslmode=disable")
+	db, err := sql.Open("postgres", "host=10.10.0.2 port=5432 user=postgres password=password dbname=database_0 sslmode=disable")
 	
 	if err != nil {
 		log.Fatal(err)
