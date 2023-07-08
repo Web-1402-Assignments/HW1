@@ -6,13 +6,13 @@ COPY ./go.mod ./go.sum ./
 
 RUN go mod download
 
-COPY ./gateway/gateway.go ./
+COPY ./Auth_Server/server.go ./
 COPY ./proto/ ./proto/
 
-RUN go build -o ./gateway
+RUN go build -o ./Auth_Server
 
 
 
-EXPOSE 6433
+EXPOSE 5052
 
-CMD ["./gateway"]
+CMD ["./Auth_Server"]

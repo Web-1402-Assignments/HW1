@@ -1,7 +1,7 @@
 package Auth_Server
 
 import (
-	pb "HW1"
+	pb "HW1/proto"
 	"context"
 	"flag"
 	"log"
