@@ -16,8 +16,8 @@ class HelloWorldUser(HttpUser):
                             'ID': '2',
                          }
                     ) as response:
-            self.nonce = response.json["nonce : "]
-            self.servernonce = response.json["servernonce : "]
+            self.nonce = response.json["nonce"]
+            self.servernonce = response.json["serverNonce"]
     
     @task
     def req_dh(self):
@@ -30,7 +30,7 @@ class HelloWorldUser(HttpUser):
                             'KEY': 6,
                          }
                     ) as response:
-            self.auth_key = response.json["key is :"]
+            self.auth_key = response.json["key"]
             
 
     @task
