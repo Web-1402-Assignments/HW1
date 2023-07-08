@@ -1,7 +1,7 @@
 package main
 
 import (
-	pb "HW1"
+	pb "HW1/proto"
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
