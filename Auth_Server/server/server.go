@@ -22,9 +22,6 @@ var (
 	port                    = flag.Int("port", 5052, "The server port")
 	p                uint32 = 23
 	g                int32  = 5
-	nonce            string
-	server_nonce     string
-	first_message_id uint32
 	//redis
 	client = redis.NewClient(&redis.Options{
         Addr:	  "localhost:6379",
@@ -32,6 +29,8 @@ var (
         DB:		  0,  // use default DB
     })
 	redis_ctx = context.Background()
+	user_snonce map[string]string
+	user_msgid map[string]uint32
 )
 
 func random_str() (string){
@@ -52,6 +51,9 @@ type server struct {
 	pb.UnimplementedReq_DHServer
 }
 
+
+
+
 func (s *server) GetPQResponse(ctx context.Context, in *pb.PQ_Request) (*pb.PQ_Response, error) {
 	if len(in.GetNonce()) != 20 {
 		return nil, fmt.Errorf("given nonce doesn't have the required length")
@@ -62,13 +64,15 @@ func (s *server) GetPQResponse(ctx context.Context, in *pb.PQ_Request) (*pb.PQ_R
 	}
 
 	log.Printf("Received: %v", in.GetNonce())
-	nonce = in.GetNonce()
-	server_nonce = random_str()
-	first_message_id = in.GetMessageId()
+
+	server_nonce := random_str()
+	user_snonce[in.GetNonce()] = server_nonce
+
+	user_msgid[in.GetNonce()] = in.GetMessageId()
 
 	//SHA1 hash
 	h := sha1.New()
-	h.Write([]byte(nonce + server_nonce))
+	h.Write([]byte(in.GetNonce() + server_nonce))
 	sha1_hash := hex.EncodeToString(h.Sum(nil))
 
 	//redis
@@ -78,12 +82,12 @@ func (s *server) GetPQResponse(ctx context.Context, in *pb.PQ_Request) (*pb.PQ_R
         DB:		  0,  // use default DB
     })
 	redis_ctx := context.Background()
-	err := client.Set(redis_ctx, fmt.Sprintf("%v", sha1_hash), first_message_id, 20*time.Minute).Err()
+	err := client.Set(redis_ctx, fmt.Sprintf("%v", sha1_hash), user_msgid[in.GetNonce()] + 1, 20*time.Minute).Err()
 	if (err != nil){
 		return nil, err
 	}
 
-	return &pb.PQ_Response{Nonce: nonce, ServerNonce: server_nonce, MessageId: in.MessageId + 1, P: p, G: g}, nil
+	return &pb.PQ_Response{Nonce: in.GetNonce(), ServerNonce: server_nonce, MessageId: in.GetMessageId() + 1, P: p, G: g}, nil
 }
 
 func (s *server) GetDHResponse(ctx context.Context, in *pb.DH_Request) (*pb.DH_Response, error) {
@@ -91,15 +95,15 @@ func (s *server) GetDHResponse(ctx context.Context, in *pb.DH_Request) (*pb.DH_R
 		return nil, fmt.Errorf("given nonce doesn't have the required length")
 	}
 
-	if in.GetNonce() != nonce {
-		return nil, fmt.Errorf("given nonce is not valid")
-	}
+	// if in.GetNonce() != nonce {
+	// 	return nil, fmt.Errorf("given nonce is not valid")
+	// }
 
 	if len(in.GetServerNonce()) != 20 {
 		return nil, fmt.Errorf("given server_nonce doesn't have the required length")
 	}
 
-	if in.GetServerNonce() != server_nonce {
+	if in.GetServerNonce() != user_snonce[in.GetNonce()] {
 		return nil, fmt.Errorf("given server_nonce is not valid")
 	}
 
@@ -107,7 +111,7 @@ func (s *server) GetDHResponse(ctx context.Context, in *pb.DH_Request) (*pb.DH_R
 		return nil, errors.New("given message_id doesn't have the correct form")
 	}
 
-	if in.GetMessageId() <= first_message_id {
+	if in.GetMessageId() <= user_msgid[in.GetNonce()] {
 		return nil, errors.New("given message_id is not valid")
 	}
 
@@ -118,7 +122,7 @@ func (s *server) GetDHResponse(ctx context.Context, in *pb.DH_Request) (*pb.DH_R
 
 	//SHA1 hash
 	h := sha1.New()
-	h.Write([]byte(nonce + server_nonce))
+	h.Write([]byte(in.GetNonce() + in.GetServerNonce()))
 	sha1_hash := hex.EncodeToString(h.Sum(nil))
 
 	
