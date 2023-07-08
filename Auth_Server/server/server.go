@@ -29,8 +29,8 @@ var (
         DB:		  0,  // use default DB
     })
 	redis_ctx = context.Background()
-	user_snonce map[string]string
-	user_msgid map[string]uint32
+	user_snonce = make(map[string]string)
+	user_msgid = make(map[string]uint32)
 )
 
 func random_str() (string){

@@ -4,7 +4,6 @@ import (
 	pb "HW1"
 	"context"
 	"errors"
-	_"fmt"
 	"log"
 	"net"
 	"time"
@@ -12,7 +11,7 @@ import (
 	"database/sql"
 
 	_ "github.com/lib/pq"
-	 "github.com/redis/go-redis/v9"
+	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
 )
 
@@ -30,8 +29,7 @@ var (
 )
 // first service: get_users
 func (s *userServiceServer) GetUsers(ctx context.Context, req *pb.GetUsersRequest) (*pb.GetUsersResponse, error) {
-
-
+	log.Printf("%d", req.GetUserId())
 	errRedise := client.Get(redis_ctx, req.GetAuthKey()).Err()
 	if errRedise != nil {
 		return nil, errors.New("invalid auth_key")
@@ -41,7 +39,7 @@ func (s *userServiceServer) GetUsers(ctx context.Context, req *pb.GetUsersReques
 	if req.GetMessageId()%2 != 0 || req.GetMessageId() <= 0 {
 		return nil, errors.New("invalid message_id")
 	}
-	
+
 	var rows *sql.Rows
 	var err error
 
