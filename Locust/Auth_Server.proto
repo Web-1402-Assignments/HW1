@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+option go_package = "github.com/Web-1402-Assignments/HW1";
+
+
+service Req_DH{
+    rpc GetPQResponse(PQ_Request) returns(PQ_Response){}
+    rpc GetDHResponse(DH_Request) returns(DH_Response){}
+}
+
+message PQ_Request{
+    string nonce = 1;
+    uint32 message_id = 2;
+}
+
+message PQ_Response{
+    string nonce = 1;
+    string server_nonce = 2;
+    uint32 message_id = 3;
+    uint32 p = 4;
+    int32 g = 5;
+}
+
+
+message DH_Request{
+    string nonce = 1;
+    string server_nonce = 2;
+    uint32 message_id = 3;
+    int32 a = 4;
+}
+
+message DH_Response{
+    string nonce = 1;
+    string server_nonce = 2;
+    uint32 message_id = 3;
+    int32 b = 4;
+}
