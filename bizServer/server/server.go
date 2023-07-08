@@ -7,7 +7,7 @@ import (
 	"log"
 	"net"
 	"time"
-
+	"regexp"
 	"database/sql"
 
 	_ "github.com/lib/pq"
@@ -29,7 +29,6 @@ var (
 )
 // first service: get_users
 func (s *userServiceServer) GetUsers(ctx context.Context, req *pb.GetUsersRequest) (*pb.GetUsersResponse, error) {
-	log.Printf("%d", req.GetUserId())
 	errRedise := client.Get(redis_ctx, req.GetAuthKey()).Err()
 	if errRedise != nil {
 		return nil, errors.New("invalid auth_key")
@@ -39,12 +38,15 @@ func (s *userServiceServer) GetUsers(ctx context.Context, req *pb.GetUsersReques
 	if req.GetMessageId()%2 != 0 || req.GetMessageId() <= 0 {
 		return nil, errors.New("invalid message_id")
 	}
-
+	r, _ := regexp.Compile("\\D")
+	if r.MatchString(req.GetUserId()){
+		return nil, errors.New("invalid input type")
+	}
 	var rows *sql.Rows
 	var err error
 
 	// Check if user_id is empty
-	if req.GetUserId() == 0 {
+	if req.GetUserId() == "" {
 		// Retrieve the first 10 rows from the table
 		rows, err = s.db.Query("SELECT * FROM users LIMIT 10")
 	} else {

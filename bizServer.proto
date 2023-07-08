@@ -17,7 +17,7 @@ message User {
 }
 
 message GetUsersRequest {
-  int32 user_id = 1;
+  string user_id = 1;
   string auth_key = 2;
   int32 message_id = 3;
 }
