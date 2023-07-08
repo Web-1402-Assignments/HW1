@@ -164,11 +164,11 @@ func main() {
 				P = response.GetP()
 				G = response.GetG()
 				ctx.JSON(200, gin.H{
-					"nonce : ": response.GetNonce(),
-					"serverNonce : ": response.GetServerNonce(),
-					"message_id : " : response.GetMessageId(),
-					"p : " : response.GetP(),
-					"g : " : response.GetG(),
+					"nonce": response.GetNonce(),
+					"serverNonce": response.GetServerNonce(),
+					"message_id" : response.GetMessageId(),
+					"p" : response.GetP(),
+					"g" : response.GetG(),
 				})
 			}
 		}
@@ -197,8 +197,8 @@ func main() {
 		
 				key := math.Mod(math.Pow(float64(response.GetB()), float64(dh_params.KEY)), float64(P))
 				ctx.JSON(200, gin.H{
-					"B is :" : response.GetB(),
-					"key is :" : key,
+					"B" : response.GetB(),
+					"key" : key,
 				})
 			}
 		}
@@ -226,8 +226,8 @@ func main() {
 					s += fmt.Sprint(user.Id) + "  " + user.Name + "  " + user.Family + "  " + fmt.Sprint(user.Age) + "  " + user.Sex + "  " + user.CreatedAt + "\u000a"
 				}
 				ctx.JSON(200, gin.H{
-					"data is : ": s,
-					"message_id is :": response.MessageId,
+					"data": s,
+					"message_id": response.MessageId,
 				})
 			}
 	})
@@ -252,8 +252,8 @@ func main() {
 					s += fmt.Sprint(user.Id) + "  " + user.Name + "  " + user.Family + "  " + fmt.Sprint(user.Age) + "  " + user.Sex + "  " + user.CreatedAt + "\u000a"
 				}
 				ctx.JSON(200, gin.H{
-					"data is : ": s,
-					"message_id is :": response.MessageId,
+					"data is": s,
+					"message_id is": response.MessageId,
 				})
 			}
 		}
