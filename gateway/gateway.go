@@ -154,22 +154,23 @@ func main() {
 			ctx.JSON(200, gin.H{
 				"err": "wrong json format!",
 			})
-		}
-		response, err := c.GetPQResponse(gateway_ctx, &pb.PQ_Request{Nonce: nonce, MessageId: data.ID})
-		if err != nil {
-			ctx.JSON(200, gin.H{
-				"err": err.Error(),
-			})
-		} else {
-			P = response.GetP()
-			G = response.GetG()
-			ctx.JSON(200, gin.H{
-				"nonce : ": response.GetNonce(),
-				"serverNonce : ": response.GetServerNonce(),
-				"message_id : " : response.GetMessageId(),
-				"p : " : response.GetP(),
-				"g : " : response.GetG(),
-			})
+		}else {
+			response, err := c.GetPQResponse(gateway_ctx, &pb.PQ_Request{Nonce: nonce, MessageId: data.ID})
+			if err != nil {
+				ctx.JSON(200, gin.H{
+					"err": err.Error(),
+				})
+			} else {
+				P = response.GetP()
+				G = response.GetG()
+				ctx.JSON(200, gin.H{
+					"nonce : ": response.GetNonce(),
+					"serverNonce : ": response.GetServerNonce(),
+					"message_id : " : response.GetMessageId(),
+					"p : " : response.GetP(),
+					"g : " : response.GetG(),
+				})
+			}
 		}
 	})
 
@@ -182,75 +183,80 @@ func main() {
 			ctx.JSON(200, gin.H{
 				"err": "wrong json format!",
 			})
-		}
-		A := math.Mod(math.Pow(float64(G), float64(dh_params.KEY)), float64(P))
-		fmt.Println(A)
-		response, err := c.GetDHResponse(gateway_ctx, &pb.DH_Request{Nonce: dh_params.NONCE,
-			 ServerNonce: dh_params.SERVER_NONCE, MessageId: dh_params.ID, A: int32(A)})
-		if err != nil {
-			fmt.Println(err)
-			ctx.JSON(200, gin.H{
-				"err": err.Error(),
-			})
-		}else {
-	
-			key := math.Mod(math.Pow(float64(response.GetB()), float64(dh_params.KEY)), float64(P))
-			ctx.JSON(200, gin.H{
-				"B is :" : response.GetB(),
-				"key is :" : key,
-			})
+		}else{
+			A := math.Mod(math.Pow(float64(G), float64(dh_params.KEY)), float64(P))
+			fmt.Println(A)
+			response, err := c.GetDHResponse(gateway_ctx, &pb.DH_Request{Nonce: dh_params.NONCE,
+				ServerNonce: dh_params.SERVER_NONCE, MessageId: dh_params.ID, A: int32(A)})
+			if err != nil {
+				fmt.Println(err)
+				ctx.JSON(200, gin.H{
+					"err": err.Error(),
+				})
+			}else {
+		
+				key := math.Mod(math.Pow(float64(response.GetB()), float64(dh_params.KEY)), float64(P))
+				ctx.JSON(200, gin.H{
+					"B is :" : response.GetB(),
+					"key is :" : key,
+				})
+			}
 		}
 	})
 	//////////////////////////////////////////////////////////////////////////////////////////
 	router.POST("/biz/getUsers/", func(ctx *gin.Context) {
 		var data get_users_biz
-		if ctx.BindJSON(&data) != nil{
-			ctx.JSON(200, gin.H{
-				"err": "wrong json format",
-			})
-		}
-		response, err := biz_client.GetUsers(gateway_ctx, &pb.GetUsersRequest{UserId: data.USER_ID, AuthKey: data.AUTH_KEY, MessageId: data.MESSAGE_ID})
-		if err != nil {
-			fmt.Println(err)
-			ctx.JSON(200, gin.H{
-				"err": err.Error(),
-			})
-		}else{
-			var s string
-			for _, user := range response.Users {
-				s += fmt.Sprint(user.Id) + "  " + user.Name + "  " + user.Family + "  " + fmt.Sprint(user.Age) + "  " + user.Sex + "  " + user.CreatedAt + "\u000a"
+		ctx.BindJSON(&data)
+		fmt.Print(data.USER_ID)
+		// 	log.Printf("%d\n", data.USER_ID)
+		// 	ctx.JSON(200, gin.H{
+		// 		"err": "wrong json format",
+		// 	})
+		// }else {
+			log.Printf("%d\n", data.USER_ID)
+			response, err := biz_client.GetUsers(gateway_ctx, &pb.GetUsersRequest{UserId: data.USER_ID, AuthKey: data.AUTH_KEY, MessageId: data.MESSAGE_ID})
+			if err != nil {
+				fmt.Println(err)
+				ctx.JSON(200, gin.H{
+					"err": err.Error(),
+				})
+			}else{
+				var s string
+				for _, user := range response.Users {
+					s += fmt.Sprint(user.Id) + "  " + user.Name + "  " + user.Family + "  " + fmt.Sprint(user.Age) + "  " + user.Sex + "  " + user.CreatedAt + "\u000a"
+				}
+				ctx.JSON(200, gin.H{
+					"data is : ": s,
+					"message_id is :": response.MessageId,
+				})
 			}
-			ctx.JSON(200, gin.H{
-				"data is : ": s,
-				"message_id is :": response.MessageId,
-			})
-		}
 	})
 	router.POST("/biz/WithInjection/", func(ctx *gin.Context) {
 		var data get_users_injection_biz
 		if ctx.BindJSON(&data) != nil {
+			fmt.Printf(data.USER_ID)
 			ctx.JSON(200, gin.H{
 				"err" : "wrong json format!",
 			})
-		}
-		response, err := biz_client.GetUsersWithSQLInject(gateway_ctx, &pb.GetUsersWithSQLInjectRequest{
-			UserId: data.USER_ID, AuthKey: data.AUTH_KEY, MessageId: data.MESSAGE_ID,
-		})
-		if err != nil {
-			ctx.JSON(200, gin.H{
-				"err": err.Error(),
+		}else{
+			response, err := biz_client.GetUsersWithSQLInject(gateway_ctx, &pb.GetUsersWithSQLInjectRequest{
+				UserId: data.USER_ID, AuthKey: data.AUTH_KEY, MessageId: data.MESSAGE_ID,
 			})
-		}else {
-			var s string
-			for _, user := range response.Users {
-				s += fmt.Sprint(user.Id) + "  " + user.Name + "  " + user.Family + "  " + fmt.Sprint(user.Age) + "  " + user.Sex + "  " + user.CreatedAt + "\u000a"
+			if err != nil {
+				ctx.JSON(200, gin.H{
+					"err": err.Error(),
+				})
+			}else {
+				var s string
+				for _, user := range response.Users {
+					s += fmt.Sprint(user.Id) + "  " + user.Name + "  " + user.Family + "  " + fmt.Sprint(user.Age) + "  " + user.Sex + "  " + user.CreatedAt + "\u000a"
+				}
+				ctx.JSON(200, gin.H{
+					"data is : ": s,
+					"message_id is :": response.MessageId,
+				})
 			}
-			ctx.JSON(200, gin.H{
-				"data is : ": s,
-				"message_id is :": response.MessageId,
-			})
 		}
-
 	})
 	////////////////////////////////////////////////////////////////////////////////
 
