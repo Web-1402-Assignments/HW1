@@ -40,7 +40,7 @@ type req_dh_params struct {
 	KEY int32
 }
 type get_users_biz struct {
-	USER_ID int32
+	USER_ID string
 	AUTH_KEY string
 	MESSAGE_ID int32
 }
@@ -213,7 +213,7 @@ func main() {
 		// 		"err": "wrong json format",
 		// 	})
 		// }else {
-			log.Printf("%d\n", data.USER_ID)
+			log.Printf("%s\n", data.USER_ID)
 			response, err := biz_client.GetUsers(gateway_ctx, &pb.GetUsersRequest{UserId: data.USER_ID, AuthKey: data.AUTH_KEY, MessageId: data.MESSAGE_ID})
 			if err != nil {
 				fmt.Println(err)
