@@ -5,6 +5,16 @@ WORKDIR /app
 COPY ./go.mod ./go.sum ./
 RUN go mod download
 
+COPY ./gateway/gateway.go ./
+COPY ./bizServer_grpc.pb.go ./bizServer.pb.go ./
+COPY ./Auth_Server_grpc.pb.go ./Auth_Server.pb.go ./
+COPY ./Auth_Server.proto ./bizServer.proto ./
+
+
+RUN go build -o ./gateway
+
+
+
 EXPOSE 6433
 
 CMD ["./gateway"]
