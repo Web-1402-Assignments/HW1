@@ -19,6 +19,10 @@ import (
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+
+	_ "HW1/docs"
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 var (
@@ -34,21 +38,22 @@ type req_pq_send_data struct {
 	ID uint32
 }
 type req_dh_params struct {
-	NONCE string
+	NONCE        string
 	SERVER_NONCE string
-	ID uint32
-	KEY int32
+	ID           uint32
+	KEY          int32
 }
 type get_users_biz struct {
-	USER_ID string
-	AUTH_KEY string
+	USER_ID    string
+	AUTH_KEY   string
 	MESSAGE_ID int32
 }
 type get_users_injection_biz struct {
-	USER_ID string
-	AUTH_KEY string
+	USER_ID    string
+	AUTH_KEY   string
 	MESSAGE_ID int32
 }
+
 func NewBlocklist() *Blocklist {
 	return &Blocklist{
 		ips: make(map[string]struct{}),
@@ -142,19 +147,31 @@ func main() {
 	// Apply rate limiting middleware to all routes
 	//router.Use(rateLimiter)
 
+
 	/////////////////////////////////////////////////////////////////////////////////////
 	////////////////////////                      /////////////////////////////////////////////////
 	/////////////////////////// POSTS /////////////////////////////////////////////
 	var P uint32
 	var G int32
-	router.POST("/auth/req_pq/",rateLimiter, func(ctx *gin.Context) {
+
+
+	// @Summary Request PQ
+	// @Description Request PQ from the server
+	// @Accept json
+	// @Produce json
+	// @Param data body req_pq_send_data true "Request data"
+	// @Success 200 {object} gin.H
+	// @Failure 400 {string} string "Bad Request"
+	// @Router /auth/req_pq/ [post]
+	router.POST("/auth/req_pq/", rateLimiter, 
+	func(ctx *gin.Context) {
 		var nonce string = random_str()
 		var data req_pq_send_data
 		if ctx.BindJSON(&data) != nil {
 			ctx.JSON(200, gin.H{
 				"err": "wrong json format!",
 			})
-		}else {
+		} else {
 			response, err := c.GetPQResponse(gateway_ctx, &pb.PQ_Request{Nonce: nonce, MessageId: data.ID})
 			if err != nil {
 				ctx.JSON(200, gin.H{
@@ -164,11 +181,11 @@ func main() {
 				P = response.GetP()
 				G = response.GetG()
 				ctx.JSON(200, gin.H{
-					"nonce": response.GetNonce(),
+					"nonce":       response.GetNonce(),
 					"serverNonce": response.GetServerNonce(),
-					"message_id" : response.GetMessageId(),
-					"p" : response.GetP(),
-					"g" : response.GetG(),
+					"message_id":  response.GetMessageId(),
+					"p":           response.GetP(),
+					"g":           response.GetG(),
 				})
 			}
 		}
@@ -176,14 +193,23 @@ func main() {
 
 	////////////////////////////////////
 
-	router.POST("/auth/req_DH_params/",rateLimiter, func(ctx *gin.Context) {
+
+	// @Summary Request DH Params
+	// @Description Request DH Params from the server
+	// @Accept json
+	// @Produce json
+	// @Param dh_params body req_dh_params true "Request data"
+	// @Success 200 {object} gin.H
+	// @Failure 400 {string} string "Bad Request"
+	// @Router /auth/req_DH_params/ [post]
+	router.POST("/auth/req_DH_params/", rateLimiter, func(ctx *gin.Context) {
 		var dh_params req_dh_params
-		
+
 		if ctx.BindJSON(&dh_params) != nil {
 			ctx.JSON(200, gin.H{
 				"err": "wrong json format!",
 			})
-		}else{
+		} else {
 			A := math.Mod(math.Pow(float64(G), float64(dh_params.KEY)), float64(P))
 			fmt.Println(A)
 			response, err := c.GetDHResponse(gateway_ctx, &pb.DH_Request{Nonce: dh_params.NONCE,
@@ -193,26 +219,35 @@ func main() {
 				ctx.JSON(200, gin.H{
 					"err": err.Error(),
 				})
-			}else {
-		
+			} else {
+
 				key := math.Mod(math.Pow(float64(response.GetB()), float64(dh_params.KEY)), float64(P))
 				ctx.JSON(200, gin.H{
-					"B" : response.GetB(),
-					"key" : key,
+					"B":   response.GetB(),
+					"key": key,
 				})
 			}
 		}
 	})
 	//////////////////////////////////////////////////////////////////////////////////////////
-	router.POST("/biz/getUsers/", func(ctx *gin.Context) {
-		var data get_users_biz
-		ctx.BindJSON(&data)
-		fmt.Print(data.USER_ID)
-		// 	log.Printf("%d\n", data.USER_ID)
-		// 	ctx.JSON(200, gin.H{
-		// 		"err": "wrong json format",
-		// 	})
-		// }else {
+	
+	// @Summary Get Users
+	// @Description Get users from the server
+	// @Accept json
+	// @Produce json
+	// @Param data body get_users_biz true "Request data"
+	// @Success 200 {object} gin.H
+	// @Failure 400 {string} string "Bad Request"
+	// @Router /biz/getUsers/ [post]
+	router.POST("/biz/getUsers/",func(ctx *gin.Context) {
+			var data get_users_biz
+			ctx.BindJSON(&data)
+			fmt.Print(data.USER_ID)
+			// 	log.Printf("%d\n", data.USER_ID)
+			// 	ctx.JSON(200, gin.H{
+			// 		"err": "wrong json format",
+			// 	})
+			// }else {
 			log.Printf("%s\n", data.USER_ID)
 			response, err := biz_client.GetUsers(gateway_ctx, &pb.GetUsersRequest{UserId: data.USER_ID, AuthKey: data.AUTH_KEY, MessageId: data.MESSAGE_ID})
 			if err != nil {
@@ -220,25 +255,34 @@ func main() {
 				ctx.JSON(200, gin.H{
 					"err": err.Error(),
 				})
-			}else{
+			} else {
 				var s string
 				for _, user := range response.Users {
 					s += fmt.Sprint(user.Id) + "  " + user.Name + "  " + user.Family + "  " + fmt.Sprint(user.Age) + "  " + user.Sex + "  " + user.CreatedAt + "\u000a"
 				}
 				ctx.JSON(200, gin.H{
-					"data": s,
+					"data":       s,
 					"message_id": response.MessageId,
 				})
 			}
 	})
+
+	// @Summary Get Users with Injection
+	// @Description Get users from the server with SQL injection
+	// @Accept json
+	// @Produce json
+	// @Param data body get_users_injection_biz true "Request data"
+	// @Success 200 {object} gin.H
+	// @Failure 400 {string} string "Bad Request"
+	// @Router /biz/WithInjection/ [post]
 	router.POST("/biz/WithInjection/", func(ctx *gin.Context) {
 		var data get_users_injection_biz
 		if ctx.BindJSON(&data) != nil {
 			fmt.Printf(data.USER_ID)
 			ctx.JSON(200, gin.H{
-				"err" : "wrong json format!",
+				"err": "wrong json format!",
 			})
-		}else{
+		} else {
 			response, err := biz_client.GetUsersWithSQLInject(gateway_ctx, &pb.GetUsersWithSQLInjectRequest{
 				UserId: data.USER_ID, AuthKey: data.AUTH_KEY, MessageId: data.MESSAGE_ID,
 			})
@@ -246,13 +290,13 @@ func main() {
 				ctx.JSON(200, gin.H{
 					"err": err.Error(),
 				})
-			}else {
+			} else {
 				var s string
 				for _, user := range response.Users {
 					s += fmt.Sprint(user.Id) + "  " + user.Name + "  " + user.Family + "  " + fmt.Sprint(user.Age) + "  " + user.Sex + "  " + user.CreatedAt + "\u000a"
 				}
 				ctx.JSON(200, gin.H{
-					"data is": s,
+					"data is":       s,
 					"message_id is": response.MessageId,
 				})
 			}
@@ -260,6 +304,7 @@ func main() {
 	})
 	////////////////////////////////////////////////////////////////////////////////
 
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	err2 := router.Run(":6433")
 	if err2 != nil {
 		log.Fatal("Failed to start the server:", err2)
