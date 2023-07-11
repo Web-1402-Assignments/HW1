@@ -1,0 +1,141 @@
+definitions:
+  gin.H:
+    additionalProperties: {}
+    type: object
+  main.get_users_biz:
+    properties:
+      auth_KEY:
+        type: string
+      message_ID:
+        type: integer
+      user_ID:
+        type: string
+    type: object
+  main.get_users_injection_biz:
+    properties:
+      auth_KEY:
+        type: string
+      message_ID:
+        type: integer
+      user_ID:
+        type: string
+    type: object
+  main.req_dh_params:
+    properties:
+      id:
+        type: integer
+      key:
+        type: integer
+      nonce:
+        type: string
+      server_NONCE:
+        type: string
+    type: object
+  main.req_pq_send_data:
+    properties:
+      id:
+        type: integer
+    type: object
+info:
+  contact: {}
+  description: A gateway to our web-service
+  title: Gateway API
+  version: "1.0"
+paths:
+  /auth/req_DH_params/:
+    post:
+      consumes:
+      - application/json
+      description: Request DH Params from the server
+      parameters:
+      - description: Request data
+        in: body
+        name: dh_params
+        required: true
+        schema:
+          $ref: '#/definitions/main.req_dh_params'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Request DH Params
+  /auth/req_pq/:
+    post:
+      consumes:
+      - application/json
+      description: Request PQ from the server
+      parameters:
+      - description: Request data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/main.req_pq_send_data'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Request PQ
+  /biz/WithInjection/:
+    post:
+      consumes:
+      - application/json
+      description: Get users from the server with SQL injection
+      parameters:
+      - description: Request data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/main.get_users_injection_biz'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Get Users with Injection
+  /biz/getUsers/:
+    post:
+      consumes:
+      - application/json
+      description: Get users from the server
+      parameters:
+      - description: Request data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/main.get_users_biz'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Get Users
+swagger: "2.0"

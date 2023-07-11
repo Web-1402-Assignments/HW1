@@ -19,40 +19,37 @@ import (
 )
 
 var (
-	port                    = flag.Int("port", 5052, "The server port")
-	p                uint32 = 23
-	g                int32  = 5
+	port        = flag.Int("port", 5052, "The server port")
+	p    uint32 = 23
+	g    int32  = 5
 	//redis
 	client = redis.NewClient(&redis.Options{
-        Addr:	  "localhost:6379",
-        Password: "", // no password set
-        DB:		  0,  // use default DB
-    })
-	redis_ctx = context.Background()
+		Addr:     "localhost:6379",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+	redis_ctx   = context.Background()
 	user_snonce = make(map[string]string)
-	user_msgid = make(map[string]uint32)
+	user_msgid  = make(map[string]uint32)
 )
 
-func random_str() (string){
+func random_str() string {
 	rand.Seed(time.Now().Unix() * 2)
-    length := 20
-  
-    ran_str := make([]byte, length)
-  
-    // Generating Random string
-    for i := 0; i < length; i++ {
-        ran_str[i] = byte((65 + rand.Intn(25)))
-    }
-  
-    return string(ran_str)
+	length := 20
+
+	ran_str := make([]byte, length)
+
+	// Generating Random string
+	for i := 0; i < length; i++ {
+		ran_str[i] = byte((65 + rand.Intn(25)))
+	}
+
+	return string(ran_str)
 }
 
 type server struct {
 	pb.UnimplementedReq_DHServer
 }
-
-
-
 
 func (s *server) GetPQResponse(ctx context.Context, in *pb.PQ_Request) (*pb.PQ_Response, error) {
 	if len(in.GetNonce()) != 20 {
@@ -77,13 +74,13 @@ func (s *server) GetPQResponse(ctx context.Context, in *pb.PQ_Request) (*pb.PQ_R
 
 	//redis
 	client := redis.NewClient(&redis.Options{
-        Addr:	  "localhost:6379",
-        Password: "", // no password set
-        DB:		  0,  // use default DB
-    })
+		Addr:     "localhost:6379",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
 	redis_ctx := context.Background()
-	err := client.Set(redis_ctx, fmt.Sprintf("%v", sha1_hash), user_msgid[in.GetNonce()] + 1, 20*time.Minute).Err()
-	if (err != nil){
+	err := client.Set(redis_ctx, fmt.Sprintf("%v", sha1_hash), user_msgid[in.GetNonce()]+1, 20*time.Minute).Err()
+	if err != nil {
 		return nil, err
 	}
 
@@ -125,10 +122,9 @@ func (s *server) GetDHResponse(ctx context.Context, in *pb.DH_Request) (*pb.DH_R
 	h.Write([]byte(in.GetNonce() + in.GetServerNonce()))
 	sha1_hash := hex.EncodeToString(h.Sum(nil))
 
-	
 	client.Del(redis_ctx, sha1_hash).Err()
 	err := client.Set(redis_ctx, fmt.Sprintf("%v", public_key), sha1_hash, 20*time.Minute).Err()
-	if (err != nil){
+	if err != nil {
 		return nil, err
 	}
 
